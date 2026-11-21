@@ -1,0 +1,10 @@
+{
+    "name": "petro",
+    "version": "1.0.0",
+    "scripts": {
+        "start": "concurrently \"npm run start --prefix my-node-backend\" \"npm run start --prefix my-react-app\""
+    },
+    "devDependencies": {
+        "concurrently": "^7.6.0"
+    }
+}
