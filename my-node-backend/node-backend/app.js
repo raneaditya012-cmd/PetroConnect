@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const bcrypt = require('bcryptjs');
 const User = require('./models/User'); // Ensure you have a User model defined
 const logauthRoute = require('./routes/logauth');  // Import the login route file
 
@@ -35,8 +36,9 @@ app.post('/api/signup', async (req, res) => {
             return res.status(400).json({ msg: 'User already exists' });
         }
 
-        // Create a new user (ensure you hash the password in real applications)
-        const newUser = new User({ username, email, password });
+        // Hash the password before storing it
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = new User({ username, email, password: hashedPassword });
 
         await newUser.save();
         res.status(201).json({ msg: 'User created successfully' });
