@@ -1,9 +1,57 @@
 // src/components/LoginPage.js
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Grid, Paper, TextField, Button, Typography, Box } from '@mui/material';
 import fuelPumpImage from '../images/petroconnect-high-resolution-logo-transparent.png';
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData.email || !formData.password) {
+      setErrorMessage('Please enter your email and password');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('http://localhost:5000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok) {
+        try {
+          localStorage.setItem('petroUser', JSON.stringify(data.user));
+        } catch (err) {
+          // storage unavailable; continue without persisting
+        }
+        navigate('/main');
+      } else {
+        setErrorMessage(data.msg || 'Login failed');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setErrorMessage('Server error. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Box 
       display="flex" 
@@ -51,29 +99,39 @@ const LoginPage = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} container alignItems="center" justifyContent="center">
-            <Paper elevation={0} style={{ padding: '30px', textAlign: 'center', border: 'none' }}>
+            <Paper
+              component="form"
+              onSubmit={handleSubmit}
+              elevation={0}
+              style={{ padding: '30px', textAlign: 'center', border: 'none' }}
+            >
               <Typography variant="h5" style={{ marginBottom: '20px', fontWeight: 'bold', color: '#333' }}>
                 Login
               </Typography>
 
+              {errorMessage && (
+                <Typography color="error" style={{ marginBottom: '10px' }}>
+                  {errorMessage}
+                </Typography>
+              )}
+
               <TextField
-                label="Username"
-                variant="outlined"
-                fullWidth
-                margin="normal"
-                InputLabelProps={{ style: { color: '#333' } }} 
-              />
-              <TextField
-                label="Password"
-                type="password"
+                label="Email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
                 variant="outlined"
                 fullWidth
                 margin="normal"
                 InputLabelProps={{ style: { color: '#333' } }}
               />
               <TextField
-                label="Confirm Password"
+                label="Password"
+                name="password"
                 type="password"
+                value={formData.password}
+                onChange={handleChange}
                 variant="outlined"
                 fullWidth
                 margin="normal"
@@ -85,9 +143,10 @@ const LoginPage = () => {
                 color="primary"
                 variant="contained"
                 fullWidth
-                style={{ marginTop: '20px', backgroundColor: '#4caf50' }} 
+                disabled={loading}
+                style={{ marginTop: '20px', backgroundColor: '#4caf50' }}
               >
-                Submit
+                {loading ? 'Logging in...' : 'Login'}
               </Button>
             </Paper>
           </Grid>
